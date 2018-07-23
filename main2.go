@@ -40,10 +40,10 @@ func main() {
 
 func countFrequencies(filename string, totalsFrequency map[rune]int, wait *sync.WaitGroup, m *sync.Mutex) {
 	symbols, err := ioutil.ReadFile(filename)
-	m.Lock()
 	if err != nil {
 		log.Fatal("failed to open the file:", err)
 	}
+	m.Lock()
 	for _, s := range string(symbols) {
 		totalsFrequency[s]++
 	}
