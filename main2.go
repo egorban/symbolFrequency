@@ -28,23 +28,26 @@ func main() {
 
 	totalsFrequency := make(map[rune]int)
 	var wait sync.WaitGroup
+	var m sync.Mutex
 
 	for _, filename := range os.Args[1:] {
 		wait.Add(1)
-		go countFrequencies(filename, totalsFrequency, &wait)
+		go countFrequencies(filename, totalsFrequency, &wait, &m)
 	}
 	wait.Wait()
 	showResult(totalsFrequency)
 }
 
-func countFrequencies(filename string, totalsFrequency map[rune]int, wait *sync.WaitGroup) {
+func countFrequencies(filename string, totalsFrequency map[rune]int, wait *sync.WaitGroup, m *sync.Mutex) {
 	symbols, err := ioutil.ReadFile(filename)
+	m.Lock()
 	if err != nil {
 		log.Fatal("failed to open the file:", err)
 	}
 	for _, s := range string(symbols) {
 		totalsFrequency[s]++
 	}
+	m.Unlock()
 	wait.Done()
 }
 
