@@ -1,5 +1,5 @@
 /*
-локальные отображения, каналы
+общее отображение, без каналов
 */
 
 package main
@@ -10,8 +10,8 @@ import (
 	"log"
 	"os"
 	"sort"
+	"sync"
 )
-
 
 type Frequencies struct {
 	Key   rune
@@ -26,37 +26,26 @@ func main() {
 		return
 	}
 
-	countFiles := lenArgs - 1
-	result := make(chan map[rune]int, countFiles)
+	totalsFrequency := make(map[rune]int)
+	var wait sync.WaitGroup
 
 	for _, filename := range os.Args[1:] {
-		go countFrequencies(filename, result)
+		wait.Add(1)
+		go countFrequencies(filename, totalsFrequency, &wait)
 	}
-
-	totalsFrequency := make(map[rune]int)
-	merge(result, totalsFrequency, countFiles)
+	wait.Wait()
 	showResult(totalsFrequency)
 }
 
-func countFrequencies(filename string, result chan map[rune]int) {
-	frequencySymbols := make(map[rune]int)
+func countFrequencies(filename string, totalsFrequency map[rune]int, wait *sync.WaitGroup) {
 	symbols, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Fatal("failed to open the file:", err)
 	}
 	for _, s := range string(symbols) {
-		frequencySymbols[s]++
+		totalsFrequency[s]++
 	}
-	result <- frequencySymbols
-}
-
-func merge(result chan map[rune]int, totalsFrequency map[rune]int, countFiles int) {
-	for i := 0; i < countFiles; i++ {
-		frequencyFile := <-result
-		for s, f := range frequencyFile {
-			totalsFrequency[s] += f
-		}
-	}
+	wait.Done()
 }
 
 func showResult(totalsFrequency map[rune]int) {
